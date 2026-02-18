@@ -1,97 +1,79 @@
 import streamlit as st
 import json
 import os
-import datetime
-from fpdf import FPDF
 
-# folders
+
 USER_FILE = "users.json"
-STORAGE_FOLDER = "storage"
-REPORT_FOLDER = "reports"
-
-# create folders if not exist
-os.makedirs(STORAGE_FOLDER, exist_ok=True)
-os.makedirs(REPORT_FOLDER, exist_ok=True)
 
 
-# load users
+# Load users
 def load_users():
 
     if os.path.exists(USER_FILE):
 
         with open(USER_FILE, "r") as f:
+
             return json.load(f)
 
     return {}
 
 
-# save users
+
+# Save users
 def save_users(users):
 
     with open(USER_FILE, "w") as f:
+
         json.dump(users, f)
 
 
 
-# fake AI analysis
-def analyze_file(filename):
 
-    report = {
-
-        "Total Events": 15230,
-        "Suspicious": 42,
-        "Risk Level": "HIGH",
-        "AI Confidence": "98%",
-        "Analysis":
-
-        f"""
-        Multiple Failed Logins detected
-        Unauthorized access attempt found
-        File analyzed: {filename}
-        """
-
-    }
-
-    return report
+# Page Config
+st.set_page_config(page_title="AIDFI Login", layout="centered")
 
 
 
-# generate PDF
-def create_pdf(report, username):
+# CSS for same UI as image
+st.markdown("""
 
-    pdf = FPDF()
+<style>
 
-    pdf.add_page()
+body{
 
-    pdf.set_font("Arial", size=12)
+background-color:#0f7c8f;
 
-    for key, value in report.items():
+}
 
-        pdf.cell(200, 10, txt=f"{key}: {value}", ln=True)
+.box{
 
-    filename = f"{REPORT_FOLDER}/{username}_report.pdf"
+background-color:#e6e6e6;
 
-    pdf.output(filename)
+padding:40px;
 
-    return filename
+border-radius:10px;
+
+}
+
+.red{
+
+color:red;
+
+font-size:14px;
+
+}
+
+</style>
+
+""", unsafe_allow_html=True)
 
 
 
 
-# UI THEME
-st.set_page_config(page_title="AIDFI", layout="wide")
+# Session page control
+if "page" not in st.session_state:
 
-st.title("AIDFI – AI Digital Forensics Investigator")
-
-
-
-menu = st.sidebar.selectbox(
-
-"Select",
-
-["Login", "Register"]
-
-)
+    st.session_state.page = "login"
 
 
 
@@ -99,21 +81,35 @@ users = load_users()
 
 
 
-# REGISTER
-if menu == "Register":
+# ---------------- REGISTER PAGE ----------------
 
-    st.subheader("Register")
+if st.session_state.page == "register":
 
-    email = st.text_input("Enter Gmail")
+
+    st.markdown("<div class='box'>", unsafe_allow_html=True)
+
+
+    st.title("Register")
+
+
+    email = st.text_input("Email")
 
     password = st.text_input("Password", type="password")
 
 
+
     if st.button("Register"):
 
-        if email in users:
 
-            st.error("User exists")
+        if email == "" or password == "":
+
+            st.markdown("<p class='red'>* Fill all fields</p>", unsafe_allow_html=True)
+
+
+        elif email in users:
+
+            st.markdown("<p class='red'>* Email already exists</p>", unsafe_allow_html=True)
+
 
         else:
 
@@ -121,107 +117,90 @@ if menu == "Register":
 
             save_users(users)
 
-            st.success("Registered Successfully")
+
+            st.success("Register Successfully")
+
+
+            st.session_state.page = "login"
+
+            st.rerun()
+
+
+
+    if st.button("Go to Login"):
+
+        st.session_state.page = "login"
+
+        st.rerun()
+
+
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 
 
-# LOGIN
-if menu == "Login":
+# ---------------- LOGIN PAGE ----------------
 
-    st.subheader("Login")
+if st.session_state.page == "login":
 
-    email = st.text_input("Enter Gmail")
+
+    st.markdown("<div class='box'>", unsafe_allow_html=True)
+
+
+    st.title("Login")
+
+
+    email = st.text_input("Email")
 
     password = st.text_input("Password", type="password")
 
 
-    if st.button("Login"):
+    error = ""
 
-        if email in users and users[email] == password:
 
-            st.success("Login Successful")
+    if st.button("Sign In"):
 
-            st.session_state.user = email
+
+        if email == "" or password == "":
+
+            error = "* Enter Email and Password"
+
+
+        elif email not in users:
+
+            error = "* Email not registered"
+
+
+        elif users[email] != password:
+
+            error = "* Incorrect Password"
+
 
         else:
 
-            st.error("Invalid login")
+            st.success("Login Successful")
+
+            st.stop()
+
+
+
+    if error:
+
+        st.markdown(f"<p class='red'>{error}</p>", unsafe_allow_html=True)
 
 
 
 
-# DASHBOARD
-if "user" in st.session_state:
-
-    st.subheader("Admin Dashboard")
+    st.write("Don't have account?")
 
 
-    file = st.file_uploader(
+    if st.button("Sign up"):
 
-    "Upload Evidence",
+        st.session_state.page = "register"
 
-    type=None
-
-    )
-
-
-    if file:
-
-        path = f"{STORAGE_FOLDER}/{file.name}"
-
-        with open(path, "wb") as f:
-
-            f.write(file.read())
-
-        st.success("File uploaded")
+        st.rerun()
 
 
 
-        if st.button("Analyze Evidence"):
-
-            report = analyze_file(file.name)
-
-            st.write(report)
-
-
-
-            save = st.radio(
-
-            "Save report?",
-
-            ["Yes", "No"]
-
-            )
-
-
-            if save == "Yes":
-
-                pdf = create_pdf(report, email)
-
-                st.success("Saved")
-
-                st.download_button(
-
-                "Download PDF",
-
-                open(pdf, "rb"),
-
-                file_name="report.pdf"
-
-                )
-
-
-            else:
-
-                pdf = create_pdf(report, email)
-
-                st.download_button(
-
-                "Download Report",
-
-                open(pdf, "rb"),
-
-                file_name="report.pdf"
-
-                )
+    st.markdown("</div>", unsafe_allow_html=True)
