@@ -1,12 +1,21 @@
 import streamlit as st
 import json
 import os
+from fpdf import FPDF
 
+
+# ---------------- FILE PATH ----------------
 
 USER_FILE = "users.json"
 
+REPORT_FOLDER = "reports"
 
-# Load users
+os.makedirs(REPORT_FOLDER, exist_ok=True)
+
+
+
+# ---------------- LOAD USERS ----------------
+
 def load_users():
 
     if os.path.exists(USER_FILE):
@@ -19,7 +28,8 @@ def load_users():
 
 
 
-# Save users
+# ---------------- SAVE USERS ----------------
+
 def save_users(users):
 
     with open(USER_FILE, "w") as f:
@@ -28,52 +38,60 @@ def save_users(users):
 
 
 
+# ---------------- FAKE ANALYSIS ----------------
 
-# Page Config
-st.set_page_config(page_title="AIDFI Login", layout="centered")
+def analyze(filename):
+
+    return {
+
+        "File Name": filename,
+        "Failed Logins": 12,
+        "Unauthorized Access": "Detected",
+        "Risk Level": "HIGH",
+        "AI Confidence": "98%"
+    }
 
 
 
-# CSS for same UI as image
-st.markdown("""
+# ---------------- PDF ----------------
 
-<style>
+def create_pdf(report, user):
 
-body{
+    pdf = FPDF()
 
-background-color:#0f7c8f;
+    pdf.add_page()
 
-}
+    pdf.set_font("Arial", size=12)
 
-.box{
 
-background-color:#e6e6e6;
+    for k, v in report.items():
 
-padding:40px;
+        pdf.cell(200, 10, txt=f"{k}: {v}", ln=True)
 
-border-radius:10px;
 
-}
+    path = f"{REPORT_FOLDER}/{user}_report.pdf"
 
-.red{
+    pdf.output(path)
 
-color:red;
-
-font-size:14px;
-
-}
-
-</style>
-
-""", unsafe_allow_html=True)
+    return path
 
 
 
 
-# Session page control
+# ---------------- SESSION ----------------
+
 if "page" not in st.session_state:
 
     st.session_state.page = "login"
+
+if "user" not in st.session_state:
+
+    st.session_state.user = None
+
+if "report" not in st.session_state:
+
+    st.session_state.report = None
+
 
 
 
@@ -81,12 +99,11 @@ users = load_users()
 
 
 
-# ---------------- REGISTER PAGE ----------------
+# =====================================================
+# REGISTER PAGE
+# =====================================================
 
 if st.session_state.page == "register":
-
-
-    st.markdown("<div class='box'>", unsafe_allow_html=True)
 
 
     st.title("Register")
@@ -97,110 +114,14 @@ if st.session_state.page == "register":
     password = st.text_input("Password", type="password")
 
 
-
     if st.button("Register"):
 
 
         if email == "" or password == "":
 
-            st.markdown("<p class='red'>* Fill all fields</p>", unsafe_allow_html=True)
+            st.error("* Fill all fields")
 
 
         elif email in users:
 
-            st.markdown("<p class='red'>* Email already exists</p>", unsafe_allow_html=True)
-
-
-        else:
-
-            users[email] = password
-
-            save_users(users)
-
-
-            st.success("Register Successfully")
-
-
-            st.session_state.page = "login"
-
-            st.rerun()
-
-
-
-    if st.button("Go to Login"):
-
-        st.session_state.page = "login"
-
-        st.rerun()
-
-
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-
-
-# ---------------- LOGIN PAGE ----------------
-
-if st.session_state.page == "login":
-
-
-    st.markdown("<div class='box'>", unsafe_allow_html=True)
-
-
-    st.title("Login")
-
-
-    email = st.text_input("Email")
-
-    password = st.text_input("Password", type="password")
-
-
-    error = ""
-
-
-    if st.button("Sign In"):
-
-
-        if email == "" or password == "":
-
-            error = "* Enter Email and Password"
-
-
-        elif email not in users:
-
-            error = "* Email not registered"
-
-
-        elif users[email] != password:
-
-            error = "* Incorrect Password"
-
-
-        else:
-
-            st.success("Login Successful")
-
-            st.stop()
-
-
-
-    if error:
-
-        st.markdown(f"<p class='red'>{error}</p>", unsafe_allow_html=True)
-
-
-
-
-    st.write("Don't have account?")
-
-
-    if st.button("Sign up"):
-
-        st.session_state.page = "register"
-
-        st.rerun()
-
-
-
-    st.markdown("</div>", unsafe_allow_html=True)
+            st.error("* Email*
