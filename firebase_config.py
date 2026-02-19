@@ -2,11 +2,12 @@ import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, storage, db
 
+# Build credential dict from Streamlit secrets
 cred_dict = {
     "type": st.secrets["FIREBASE_TYPE"],
     "project_id": st.secrets["FIREBASE_PROJECT_ID"],
     "private_key_id": st.secrets["FIREBASE_PRIVATE_KEY_ID"],
-    "private_key": st.secrets["FIREBASE_PRIVATE_KEY"].replace("\\n", "\n"),
+    "private_key": st.secrets["FIREBASE_PRIVATE_KEY"],  # DO NOT replace \n
     "client_email": st.secrets["FIREBASE_CLIENT_EMAIL"],
     "client_id": st.secrets["FIREBASE_CLIENT_ID"],
     "auth_uri": st.secrets["FIREBASE_AUTH_URI"],
@@ -24,3 +25,11 @@ firebase_admin.initialize_app(cred, {
 
 bucket = storage.bucket()
 ref = db.reference('intruder_data')
+
+def upload_intruder_image(file_path, filename):
+    blob = bucket.blob(f"intruder/{filename}")
+    blob.upload_from_filename(file_path)
+    return blob.public_url
+
+def save_location(user_id, lat, lng):
+    ref.child(user_id).set({'lat': lat, 'lng': lng})
