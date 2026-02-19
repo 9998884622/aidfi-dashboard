@@ -1,35 +1,67 @@
-import streamlit as st
+```python
 import firebase_admin
-from firebase_admin import credentials, storage, db
 
-# Build credential dict from Streamlit secrets
-cred_dict = {
-    "type": st.secrets["FIREBASE_TYPE"],
-    "project_id": st.secrets["FIREBASE_PROJECT_ID"],
-    "private_key_id": st.secrets["FIREBASE_PRIVATE_KEY_ID"],
-    "private_key": st.secrets["FIREBASE_PRIVATE_KEY"],  # DO NOT replace \n
-    "client_email": st.secrets["FIREBASE_CLIENT_EMAIL"],
-    "client_id": st.secrets["FIREBASE_CLIENT_ID"],
-    "auth_uri": st.secrets["FIREBASE_AUTH_URI"],
-    "token_uri": st.secrets["FIREBASE_TOKEN_URI"],
-    "auth_provider_x509_cert_url": st.secrets["FIREBASE_AUTH_PROVIDER_X509_CERT_URL"],
-    "client_x509_cert_url": st.secrets["FIREBASE_CLIENT_X509_CERT_URL"]
-}
+from firebase_admin import credentials,storage,db
 
-cred = credentials.Certificate(cred_dict)
+import streamlit as st
 
-firebase_admin.initialize_app(cred, {
-    'storageBucket': f'{st.secrets["FIREBASE_PROJECT_ID"]}.appspot.com',
-    'databaseURL': f'https://{st.secrets["FIREBASE_PROJECT_ID"]}.firebaseio.com/'
-})
 
-bucket = storage.bucket()
-ref = db.reference('intruder_data')
+if not firebase_admin._apps:
 
-def upload_intruder_image(file_path, filename):
-    blob = bucket.blob(f"intruder/{filename}")
-    blob.upload_from_filename(file_path)
-    return blob.public_url
+    cred=credentials.Certificate(dict(st.secrets["FIREBASE"]))
 
-def save_location(user_id, lat, lng):
-    ref.child(user_id).set({'lat': lat, 'lng': lng})
+    firebase_admin.initialize_app(
+
+        cred,
+
+        {
+
+        "storageBucket":st.secrets["FIREBASE"]["project_id"]+".appspot.com",
+
+        "databaseURL":"https://"+st.secrets["FIREBASE"]["project_id"]+"-default-rtdb.firebaseio.com/"
+
+        }
+
+    )
+
+
+bucket=storage.bucket()
+
+ref=db.reference("intruder")
+
+
+def upload_image(path,name):
+
+    blob=bucket.blob(name)
+
+    blob.upload_from_filename(path)
+
+
+def save_location(user,lat,lng):
+
+    ref.child(user).set({
+
+    "lat":lat,
+
+    "lng":lng
+
+    })
+
+
+def get_images():
+
+    blobs=bucket.list_blobs()
+
+    urls=[]
+
+    for blob in blobs:
+
+        urls.append(blob.public_url)
+
+    return urls
+
+
+def get_locations():
+
+    return ref.get()
+```
