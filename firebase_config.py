@@ -1,26 +1,24 @@
+# Dummy Firebase Config
+# Replace later with real Firebase
 
-Delete everything.
+data_files = []
+locations = {}
 
-Paste this ONLY:
+def upload_file(path, name):
 
-```python
-import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, storage, db
+    data_files.append(name)
 
-if not firebase_admin._apps:
+def get_files():
 
-    cred = credentials.Certificate({
-        "type": st.secrets["FIREBASE_TYPE"],
-        "project_id": st.secrets["FIREBASE_PROJECT_ID"],
-        "private_key_id": st.secrets["FIREBASE_PRIVATE_KEY_ID"],
-        "private_key": st.secrets["FIREBASE_PRIVATE_KEY"],
-        "client_email": st.secrets["FIREBASE_CLIENT_EMAIL"],
-        "client_id": st.secrets["FIREBASE_CLIENT_ID"],
-        "token_uri": st.secrets["FIREBASE_TOKEN_URI"]
-    })
+    return data_files
 
-    firebase_admin.initialize_app(cred, {
-        "storageBucket": "aidfi-492df.appspot.com",
-        "databaseURL": "https://aidfi-492df-default-rtdb.firebaseio.com/"
-    })
+def save_location(user, lat, lng):
+
+    locations[user] = {
+        "lat": lat,
+        "lng": lng
+    }
+
+def get_locations():
+
+    return locations
